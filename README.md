@@ -141,8 +141,7 @@ The NFS Subdirectory External Provisioner is a component that enables dynamic pr
 
 8. Create the supporting objects and `storageClass`
    ```
-   oc apply -f ./objects/rbac.yaml
-   oc apply -f ./objects/deployment.yaml
+   oc apply -k ./objects/.
    ```
 
 7. Check the deployment status:
@@ -151,7 +150,7 @@ The NFS Subdirectory External Provisioner is a component that enables dynamic pr
    ```
 
 8. List the newly created StorageClass:
-   ```bash
+   ```
    oc get storageclass
    oc get storageclass nfs-client -o yaml
    ```

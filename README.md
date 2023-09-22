@@ -122,13 +122,12 @@ The NFS Subdirectory External Provisioner is a component that enables dynamic pr
 4. Verify the values.
    ```
    echo $IP $NFS_EXPORT
-   10.0.90.24 /mnt/k8s_nfs_storage
    ```
    
 6. Create a new namespace and install the NFS Subdirectory External Provisioner:
    ```
    oc new-project nfs-subdir-external-provisioner
-   sed -i "s-<NFS_EXPORT>-/mnt/$NFS_EXPORT-g" ./objects/deployment.yaml
+   sed -i "s-<NFS_EXPORT>-$NFS_EXPORT-g" ./objects/deployment.yaml
    sed -i "s/<IP>/$IP/g" ./objects/deployment.yaml
    ```
 

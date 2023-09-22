@@ -97,7 +97,7 @@ To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the di
    sh-4.4# chroot /host
    sh-5.1# showmount -e 10.0.90.24
    Export list for 10.0.90.24:
-   /mnt/data *
+   /mnt/k8s_nfs_storage *
    sh-5.1# mkdir /mnt/test ; mount -t nfs 10.0.90.24:/mnt/k8s_nfs_storage /mnt/test
    sh-5.1# touch /mnt/test/testfile
    sh-5.1# umount /mnt/test
@@ -141,7 +141,8 @@ The NFS Subdirectory External Provisioner is a component that enables dynamic pr
 
 8. Create the supporting objects and `storageClass`
    ```
-   oc apply -k ./objects/.
+   oc apply -f ./objects/deployment.yaml
+   oc apply -f ./objects/class.yaml
    ```
 
 7. Check the deployment status:

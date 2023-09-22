@@ -36,39 +36,34 @@ To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the di
 
 3. **Configure the NFS Server:**
    On the NFS server (the machine with the shared directory), you need to configure the NFS export.
-
-   a. Open the NFS exports configuration file for editing. On RHEL/CentOS, this file is usually `/etc/exports`.
-      ```bash
-      sudo vi /etc/exports
+   Add a line in the `/etc/exports` file to specify the directory to be shared and the client(s) that are allowed to access it.
+   Optional: *Replace `<client-ip>` with the IP address or subnet of the machine that will mount the NFS share.*
+      ```
+      echo "/mnt/k8s_nfs_storage *(rw,sync,no_subtree_check)" | sudo tee -a /etc/exports
       ```
 
-   b. Add a line in the `/etc/exports` file to specify the directory to be shared and the client(s) that are allowed to access it. Replace `<client-ip>` with the IP address or subnet of the machine that will mount the NFS share.
-      ```
-      /mnt/k8s_nfs_storage *(rw,sync,no_subtree_check)
-      ```
-
-      - `/path/to/shared/directory`: The directory you want to share via NFS.
+      - `/NFS_EXPORT/to/shared/directory`: The directory you want to share via NFS.
       - `<client-ip>`: The IP address or subnet of the machine that will mount the NFS share.
       - `rw`: Read-Write access.
       - `sync`: Synchronous writes (safer but potentially slower).
       - `no_subtree_check`: Avoid subtree checking for better performance and flexibility.
 
-   c. Save and exit the file.
+   
 
-4. **Export the NFS Share:**
+5. **Export the NFS Share:**
    After making changes to the `/etc/exports` file, export the shared directory.
-   ```bash
+   ```
    sudo exportfs -rav
    ```
 
-5. **Start NFS Services:**
+6. **Start NFS Services:**
    Make sure the NFS server services are running and enabled to start at boot.
    ```bash
    sudo systemctl enable nfs-server
    sudo systemctl start nfs-server
    ```
 
-6. **Configure Firewall (if enabled):**
+7. **Configure Firewall (if enabled):**
    If the NFS server has a firewall enabled, you need to allow NFS traffic.
    ```bash
    sudo firewall-cmd --add-service=nfs --add-service=rpc-bind --add-service=mountd --permanent
@@ -76,7 +71,7 @@ To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the di
    ```
 
 
-7. **Test the NFS client – OCP Masters & worker:**
+8. **Test the NFS client – OCP Masters & worker:**
    Once you have the NFS server ready, you can configure the NFS client and test the filesystem access.
    ```
    [core@bastion]$ oc get nodes
@@ -90,7 +85,7 @@ To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the di
    ```
    ```
    [core@bastion]$ hostname -I
-   10.74.211.235 2620:52:0:4ad0:f816:3eff:fe46:d297 
+   10.0.90.24 2620:52:0:4ad0:f816:3eff:fe46:d297 
    ```
    ```
    [core@bastion]$ oc debug node/worker-0
@@ -100,10 +95,10 @@ To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the di
    Pod IP: 10.74.210.229
    If you don't see a command prompt, try pressing enter.
    sh-4.4# chroot /host
-   sh-5.1# showmount -e 10.74.211.235
-   Export list for 10.74.211.235:
+   sh-5.1# showmount -e 10.0.90.24
+   Export list for 10.0.90.24:
    /mnt/data *
-   sh-5.1# mkdir /mnt/test ; mount -t nfs 10.74.211.235:/mnt/k8s_nfs_storage /mnt/test
+   sh-5.1# mkdir /mnt/test ; mount -t nfs 10.0.90.24:/mnt/k8s_nfs_storage /mnt/test
    sh-5.1# touch /mnt/test/testfile
    sh-5.1# umount /mnt/test
    sh-5.1# exit
@@ -115,39 +110,39 @@ The NFS Subdirectory External Provisioner is a component that enables dynamic pr
 
 1. Clone this repository:
    ```
-   git@github.com:BabbarPB08/NFS-OCP.git && cd NFS-OCP
+   git clone https://github.com/BabbarPB08/NFS-OCP.git && cd NFS-OCP
    ```
 
-3. Check the NFS export and set the variable for IP address and for Path.
+3. Check the NFS export and set the variable for IP address and for NFS_EXPORT.
    ```
    IP=`hostname -I | awk '{ print $1 }'`
-   PATH=`showmount -e $IP --no-headers | awk '{ print $1 }'`
+   NFS_EXPORT=`showmount -e $IP --no-headers | awk '{ print $1 }'`
    ```
    
 4. Verify the values.
    ```
-   echo $IP $PATH
+   echo $IP $NFS_EXPORT
    10.0.90.24 /mnt/k8s_nfs_storage
    ```
    
 6. Create a new namespace and install the NFS Subdirectory External Provisioner:
    ```
    oc new-project nfs-subdir-external-provisioner
-   sed -i "s-<PATH>-/mnt/k8s_nfs_storage-g" ./objects/deployment.yaml
-   sed -i "s/<IP>/10.74.212.152/g" ./objects/deployment.yaml
+   sed -i "s-<NFS_EXPORT>-/mnt/$NFS_EXPORT-g" ./objects/deployment.yaml
+   sed -i "s/<IP>/$IP/g" ./objects/deployment.yaml
    ```
 
 7. Set the subject of the RBAC objects to the current namespace where the provisioner is being deployed
    ```
    NAMESPACE=`oc project -q`
-   sed -i'' "s/namespace:.*/namespace: $NAMESPACE/g" ./objectsy/rbac.yaml ./objects/deployment.yaml
+   sed -i'' "s/namespace:.*/namespace: $NAMESPACE/g" ./objects/rbac.yaml ./objects/deployment.yaml
    oc create -f objects/rbac.yaml
-   oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:$NAMESPACE:nfs-client-provisioner
+   oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:$NAMESPACE:nfs-client-provisioner   
    ```
 
 8. Create the supporting objects and `storageClass`
    ```
-   oc apply -f ./objectsy/rbac.yaml
+   oc apply -f ./objects/rbac.yaml
    oc apply -f ./objects/deployment.yaml
    ```
 

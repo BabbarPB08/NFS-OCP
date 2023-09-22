@@ -163,7 +163,7 @@ Test NFS Subdirectory External Provisioner:
    oc get pvc test-claim
    ```
 
-3.  Create a PVC and check its status, PVC will be attached to it
+2.  Create a PVC and check its status, PVC will be attached to it
    ```
    oc create -f ./objects/test-pod.yaml
    oc describe pod test-pod
@@ -173,4 +173,47 @@ You have now successfully deployed NFS Subdirectory External Provisioner in Open
 
 Now that the NFS Subdirectory External Provisioner setup is complete, you can proceed with configuring the Tekton or Jenkins pipeline. This will allow you to integrate your applications with the provisioned NFS storage and automate your CI/CD workflows effectively.
 
-To implement Tekton, you can follow the instructions provided in this GitHub repository: https://github.com/openshift/pipelines-tutorial
+To implement Tekton, you can follow the instructions provided in this [OpenShift repository](https://github.com/openshift/pipelines-tutorial)
+
+Here is a demonstration of how to quickly deploy Jenkins using NFS storage:
+
+1. Begin by creating a namespace for Jenkins.
+```
+oc new-project jenkins
+```
+
+2. Next, create a Persistent Volume Claim (PVC) to connect Jenkins pods with a specified storage class.
+```
+cat <<EOF | oc apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftNewApp
+  finalizers:
+  - kubernetes.io/pvc-protection
+  labels:
+    app: jenkins-persistent
+    template: jenkins-persistent-template
+  name: jenkins
+  namespace: jenkins
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeMode: Filesystem
+  storageClassName: nfs-client # Specify the storage class name here
+EOF
+```
+
+3. Now proceed to deploy the Jenkins application.
+```
+oc new-app jenkins-persistent
+```
+
+4. Once the application has been successfully deployed, you can access its URL.
+```
+oc get routes -o json -n jenkins | jq -r '.items[0].spec.host'
+```

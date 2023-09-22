@@ -31,9 +31,9 @@ spec:
             - name: NFS_SERVER
               value: <IP> 
             - name: NFS_PATH
-              value: <PATH>
+              value: <NFS_EXPORT>
       volumes:
         - name: nfs-client-root
           nfs:
             server: <IP>
-            path: <PATH>
+            path: <NFS_EXPORT>

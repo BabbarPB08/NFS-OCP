@@ -22,7 +22,6 @@ To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the di
    Check if NFS utilities are installed on your system. If not, install them using the package manager (yum or dnf).
    ```bash
    sudo yum install nfs-utils      # For RHEL/CentOS 7 and earlier
-   sudo dnf install nfs-utils      # For RHEL/CentOS 8 and newer
    ```
 
 2. **Create the Mount Point Directory:**
@@ -114,24 +113,50 @@ To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the di
 **NFS Subdirectory External Provisioner in OpenShift:**
 The NFS Subdirectory External Provisioner is a component that enables dynamic provisioning of PersistentVolumeClaims (PVCs) in OpenShift (and Kubernetes) using existing NFS shares as the underlying storage. It simplifies the process of setting up and managing NFS-based storage for your applications running in an OpenShift cluster.
 
-1. [Install Helm](https://docs.openshift.com/container-platform/4.13/applications/working_with_helm_charts/installing-helm.html) and add the Helm repository for the NFS Subdirectory External Provisioner:
-   ```bash
-   helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
-   helm repo update
+1. Clone this repository:
+   ```
+   git@github.com:BabbarPB08/NFS-OCP.git && cd NFS-OCP
    ```
 
-2. Create a new namespace and install the NFS Subdirectory External Provisioner Helm chart:
-   ```bash
-   helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --set nfs.server=10.74.211.235 --set nfs.path=/mnt/k8s_nfs_storage -n nfsstorage --create-namespace
-
+3. Check the NFS export and set the variable for IP address and for Path.
+   ```
+   IP=`hostname -I | awk '{ print $1 }'`
+   PATH=`showmount -e $IP --no-headers | awk '{ print $1 }'`
+   ```
+   
+4. Verify the values.
+   ```
+   echo $IP $PATH
+   10.0.90.24 /mnt/k8s_nfs_storage
+   ```
+   
+6. Create a new namespace and install the NFS Subdirectory External Provisioner:
+   ```
+   oc new-project nfs-subdir-external-provisioner
+   sed -i "s-<PATH>-/mnt/k8s_nfs_storage-g" ./objects/deployment.yaml
+   sed -i "s/<IP>/10.74.212.152/g" ./objects/deployment.yaml
    ```
 
-3. Check the deployment status:
-   ```bash
-   oc get all -n nfsstorage
+7. Set the subject of the RBAC objects to the current namespace where the provisioner is being deployed
+   ```
+   NAMESPACE=`oc project -q`
+   sed -i'' "s/namespace:.*/namespace: $NAMESPACE/g" ./objectsy/rbac.yaml ./objects/deployment.yaml
+   oc create -f objects/rbac.yaml
+   oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:$NAMESPACE:nfs-client-provisioner
    ```
 
-4. List the newly created StorageClass:
+8. Create the supporting objects and `storageClass`
+   ```
+   oc apply -f ./objectsy/rbac.yaml
+   oc apply -f ./objects/deployment.yaml
+   ```
+
+7. Check the deployment status:
+   ```
+   oc get all -n nfs-subdir-external-provisioner
+   ```
+
+8. List the newly created StorageClass:
    ```bash
    oc get storageclass
    oc get storageclass nfs-client -o yaml
@@ -139,30 +164,16 @@ The NFS Subdirectory External Provisioner is a component that enables dynamic pr
 
 Test NFS Subdirectory External Provisioner:
 
-1. Create a manifest to create the PersistentVolumeClaim (PVC):
-   ```yaml
-   kind: PersistentVolumeClaim
-   apiVersion: v1
-   metadata:
-     name: test-claim
-   spec:
-     storageClassName: nfs-client
-     accessModes:
-       - ReadWriteMany
-     resources:
-       requests:
-         storage: 1Mi
+1. Create a PVC and check its status:
+   ```
+   oc create -f ./objects/test-claim.yaml
+   oc get pvc test-claim
    ```
 
-2. Create the PVC and check its status:
-   ```bash
-   oc create -f pvc.yaml
-   oc get pvc
+3.  Create a PVC and check its status, PVC will be attached to it
    ```
-
-3. Check the backend volume for the above PVC:
-   ```bash
-   oc get pv
+   oc create -f ./objects/test-pod.yaml
+   oc describe pod test-pod
    ```
 
 You have now successfully deployed NFS Subdirectory External Provisioner in OpenShift to use NFS shares for persistent storage. The provisioner enables dynamic storage provisioning by creating PersistentVolumeClaims and binding them to existing NFS shares that are accessible to all OpenShift nodes.

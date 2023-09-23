@@ -21,7 +21,7 @@ To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the di
 1. **Install NFS Utilities (if not already installed):**
    Check if NFS utilities are installed on your system. If not, install them using the package manager (yum or dnf).
    ```bash
-   sudo yum install nfs-utils -y
+   sudo yum install nfs-utils git -y
    ```
 
 2. **Create the Mount Point Directory:**

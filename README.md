@@ -18,8 +18,8 @@ NFS server to share the NFS shares
 
 To create an NFS mount in RHEL (Red Hat Enterprise Linux) and mount it to the directory `/mnt/k8s_nfs_storage`, you'll need to follow these detailed steps:
 
-1. **Install NFS Utilities (if not already installed):**
-   Check if NFS utilities are installed on your system. If not, install them using the package manager (yum or dnf).
+1. **Install NFS Utilities and Git (if not already installed):**
+   Check if NFS utilities and Git are installed on your system. If not, install them using the package manager (yum or dnf).
    ```bash
    sudo yum install nfs-utils git -y
    ```

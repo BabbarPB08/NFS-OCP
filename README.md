@@ -174,7 +174,7 @@ You have now successfully deployed NFS Subdirectory External Provisioner in Open
 
 Now that the NFS Subdirectory External Provisioner setup is complete, you can proceed with configuring the Tekton or Jenkins pipeline. This will allow you to integrate your applications with the provisioned NFS storage and automate your CI/CD workflows effectively.
 
-To set up Tekton, you can reference the guidance outlined in this [OpenShift repository](https://github.com/openshift/pipelines-tutorial). However, it's worth noting that Tekton is also compatible with AWS and GCP, as long as StorageClass is accessible. Therefore, I recommend utilizing [this modified repository](https://github.com/BabbarPB08/pipelines-tutorial), where I have already incorporated the necessary modifications to include NFS StorageClass as a PVC.
+To establish Tekton, you can follow the instructions provided in this [OpenShift repository](https://github.com/openshift/pipelines-tutorial). However, in the original repository, the setup is designed to work with cloud environments that can supply the required storage class. As a result, I suggest using [this customized repository](https://github.com/BabbarPB08/pipelines-tutorial), where I've already integrated the essential adjustments to include an NFS StorageClass as a PVC.
 
 Here is a demonstration of how to quickly deploy Jenkins using NFS storage:
 

@@ -218,3 +218,10 @@ oc new-app jenkins-persistent
 ```
 oc get routes -o json -n jenkins | jq -r '.items[0].spec.host'
 ```
+
+5. Configure the Maven agent to perfom pipeline tasks.
+```
+oc import-image jenkins-agent-maven:latest \
+  --from=registry.redhat.io/openshift4/ose-jenkins-agent-maven:v4.10.0-202308281624.p0.ge654cfb.assembly.stream \
+  --confirm -n openshift
+```
